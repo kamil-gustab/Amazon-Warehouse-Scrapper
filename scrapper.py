@@ -10,6 +10,7 @@ from glob import glob
 
 logging.basicConfig(
     level=logging.INFO,
+    filename='logs.log',
     format="%(levelname)s : %(asctime)s : %(message)s"
 )
 
@@ -19,8 +20,11 @@ HEADERS = ({'User-Agent':
             'Accept-Language': 'en-US, en;q=0.5'})
 
 if __name__ == "__main__":
+    config_path = os.path.abspath("config")
+    search_data_path = os.path.abspath("search_data")
+
     # Reading file
-    products = pandas.read_csv('config/tracked_products.csv', sep=',')
+    products = pandas.read_csv(f'{config_path}\\tracked_products.csv', sep=',')
     date_now = datetime.now().strftime('%Y-%m-%d %H:%M')
     recent_data = pandas.DataFrame()
 
@@ -30,7 +34,12 @@ if __name__ == "__main__":
 
         # Using BeautifulSoup for reading lxml
         soup = BeautifulSoup(page.content, features='lxml')
-        product_name = soup.find(id="productTitle").get_text().strip()
+
+        try:
+            product_name = soup.find(id="productTitle").get_text().strip()
+        except AttributeError:
+            # If can't get Product title, then skips product
+            continue
 
         # Checking price for used items from Amazon Warehouse
         try:
@@ -63,8 +72,7 @@ if __name__ == "__main__":
         recent_data = recent_data.append(data)
         logging.info(f'Patching [{product_name}] to data set.')
 
-    abs_path = os.path.abspath("search_data")
-    previous_searches = glob(f'{abs_path}/*.xlsx')[-1]
+    previous_searches = f'{search_data_path}\\searching_history.xlsx'
     previous_data = pandas.read_excel(previous_searches)
     logging.info(f'Collecting previous data.')
 
