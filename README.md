@@ -7,7 +7,8 @@ Make sure you have installed:
 * [requests](https://pypi.org/project/requests)
 * [BeautifulSoup](https://pypi.org/project/BeautifulSoup)
 * [pandas](https://pypi.org/project/pandas)
-* glob
+* openpyxl
+* lxml
 
 Before run you need to complete 2 files you can find in: `/config`
 
