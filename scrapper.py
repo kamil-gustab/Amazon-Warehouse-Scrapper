@@ -24,7 +24,7 @@ if __name__ == "__main__":
     search_data_path = os.path.abspath("search_data")
 
     # Reading file
-    products = pandas.read_csv(f'{config_path}\\tracked_products.csv', sep=',')
+    products = pandas.read_csv(f'{config_path}/tracked_products.csv', sep=',')
     date_now = datetime.now().strftime('%Y-%m-%d %H:%M')
     recent_data = pandas.DataFrame()
 
@@ -72,7 +72,7 @@ if __name__ == "__main__":
         recent_data = recent_data.append(data)
         logging.info(f'Patching [{product_name}] to data set.')
 
-    previous_searches = f'{search_data_path}\\searching_history.xlsx'
+    previous_searches = f'{search_data_path}/searching_history.xlsx'
     previous_data = pandas.read_excel(previous_searches)
     logging.info(f'Collecting previous data.')
 
