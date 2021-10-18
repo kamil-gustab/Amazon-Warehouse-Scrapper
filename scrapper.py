@@ -37,7 +37,7 @@ if __name__ == "__main__":
             warehouse_price = round(float(soup.select('#olpLinkWidget_feature_div .a-color-base')
                                           [0].get_text()[:6].replace(',', '.'))*1.033616, 2)
         except IndexError:
-            warehouse_price = 'not available'
+            warehouse_price = 'N/A'
 
         # Sending email notifications if price is lower than our Target price
         try:
