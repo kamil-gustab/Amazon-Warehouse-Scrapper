@@ -5,7 +5,7 @@ It is the python app - Web Scrapper for checking and saving price histories for 
 ## 🚀 Usage
 Make sure you have installed:
 * [requests](https://pypi.org/project/requests)
-* [BeautifulSoup](https://pypi.org/project/BeautifulSoup)
+* [BeautifulSoup4](https://pypi.org/project/beautifulsoup4)
 * [pandas](https://pypi.org/project/pandas)
 * [openpyxl](https://pypi.org/project/openpyxl/)
 * [lxml](https://pypi.org/project/lxml/)
