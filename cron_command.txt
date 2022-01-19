@@ -1,0 +1,2 @@
+#every 10min | your path to scrapper catalog |                | path to your python         | path to your log file from cron
+*/10 * * * * cd /home/{your-user}/Amazon-Warehouse-Scrapper; /usr/bin/python3 scrapper.py > /home/ubuntu/Amazon-Warehouse-Scrapper/cron_logs.log 2>&1

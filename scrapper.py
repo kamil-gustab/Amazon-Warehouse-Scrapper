@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import email_notificator
 import requests
 import pandas
@@ -41,7 +43,7 @@ if __name__ == "__main__":
             # If can't get Product title, then skips product
             continue
 
-        # Checking price for used items from Amazon Warehouse
+	# Checking price for used items from Amazon Warehouse
         try:
             warehouse_price = round(float(soup.select('#olpLinkWidget_feature_div .a-color-base')
                                           [0].get_text()[:6].replace(',', '.'))*1.033616, 2)
@@ -57,7 +59,7 @@ if __name__ == "__main__":
                     link=products.link[prod_number],
                     price_diff=round(products.target_price[prod_number] - warehouse_price, 2)
                 )
-                logging.info(f'Sending email notification about [{product_name}] for: {warehouse_price}')
+                print(f'Sending email notification about [{product_name}] for: {warehouse_price}')
         except TypeError:
             pass
 
@@ -70,13 +72,13 @@ if __name__ == "__main__":
         }, index=[prod_number])
 
         recent_data = recent_data.append(data)
-        logging.info(f'Patching [{product_name}] to data set.')
+        print(f'Patching [{product_name}] to data set.')
 
     previous_searches = f'{search_data_path}/searching_history.xlsx'
     previous_data = pandas.read_excel(previous_searches)
-    logging.info(f'Collecting previous data.')
+    print(f'Collecting previous data.')
 
     complete_data = previous_data.append(recent_data, sort=False)
-    logging.info(f'Appending recent data, and merging with previous data.')
+    print(f'Appending recent data, and merging with previous data.')
 
     complete_data.to_excel('search_data/searching_history.xlsx', index=False)
