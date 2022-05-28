@@ -20,14 +20,16 @@ def send_mail(product_name, price, link, price_diff):
 
     msg = EmailMessage()
     msg.set_content(f'''
-    Buy [{product_name}] for {price} euro\n
+    We found match for one of your items:\n
+    [{product_name}] for {price} euro\n
     Link: {link}\n
     It\'s {price_diff} euro cheaper than your target price! 
     
     Message sent automatically by Amazon Warehouse Scrapper.
+    Visit project at: https://github.com/kamil-gustab/Amazon-Warehouse-Scrapper
     ''')
 
-    msg['Subject'] = 'Buy your product!'
+    msg['Subject'] = 'Match for your Amazon Alert!'
     msg['From'] = 'Amazon Warehouse Scrapper'
     msg['To'] = recipient_email
 
