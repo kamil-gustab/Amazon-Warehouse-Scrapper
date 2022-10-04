@@ -44,7 +44,7 @@ if __name__ == "__main__":
         # Checking price for used items from Amazon Warehouse
         try:
             warehouse_price = round(float(soup.select('#olpLinkWidget_feature_div .a-color-base')
-                                          [0].get_text()[:6].replace(',', '.'))*1.033616, 2)
+                                          [0].get_text()[:6].replace('$','').replace('US','').replace(',', '.'))*1.033616, 2)
         except IndexError:
             # If product doesn't have its price
             continue
