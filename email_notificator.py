@@ -23,8 +23,8 @@ def send_mail(product_name, price, link, price_diff):
     We found match for one of your items:\n
     [{product_name}] for {price} euro\n
     Link: {link}\n
-    It\'s {price_diff} euro cheaper than your target price! 
-    
+    It\'s {price_diff} euro cheaper than your target price!
+
     Message sent automatically by Amazon Warehouse Scrapper.
     Visit project at: https://github.com/kamil-gustab/Amazon-Warehouse-Scrapper
     ''')
