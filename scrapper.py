@@ -1,11 +1,12 @@
+import argparse
 import email_notificator
-import requests
-import pandas
-import os
 import logging
+import pandas
+import requests
+import telegram_send
+import os
 from bs4 import BeautifulSoup
 from datetime import datetime
-from glob import glob
 
 
 logging.basicConfig(
@@ -16,10 +17,27 @@ logging.basicConfig(
 
 HEADERS = ({'User-Agent':
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-            'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36',
+            'AppleWebKit/537.36 (KHTML, like Gecko) '
+            'Chrome/94.0.4606.81 Safari/537.36',
             'Accept-Language': 'en-US, en;q=0.5'})
 
+
+def notify_telegram(product_name, price, link, price_diff):
+    message = f'''
+        We found match for one of your items:\n
+        [{product_name}] for {price} euro\n
+        Link: {link}\n
+        It\'s {price_diff} euro cheaper than your target price!
+        '''
+    telegram_send.send(messages=[message])
+
+
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--notify', type=str, required=True,
+                        choices=['mail', 'no-notify', 'telegram'])
+    args = parser.parse_args()
+
     config_path = os.path.abspath("config")
     search_data_path = os.path.abspath("search_data")
 
@@ -43,22 +61,42 @@ if __name__ == "__main__":
 
         # Checking price for used items from Amazon Warehouse
         try:
-            warehouse_price = round(float(soup.select('#olpLinkWidget_feature_div .a-color-base')
-                                          [0].get_text()[:6].replace(',', '.'))*1.033616, 2)
+            div = '#olpLinkWidget_feature_div .a-color-base'
+            warehouse_price = round(float(soup.select(div)
+                                          [0].get_text()[:6].
+                                          replace(',', '.')) * 1.033616, 2)
         except IndexError:
             # If product doesn't have its price
             continue
 
         # Sending email notifications if price is lower than our Target price
         try:
-            if warehouse_price < products.target_price[prod_number]:
+            if warehouse_price < products.target_price[prod_number] \
+                    and args.notify == "mail":
                 email_notificator.send_mail(
                     product_name=product_name,
                     price=warehouse_price,
                     link=products.link[prod_number],
-                    price_diff=round(products.target_price[prod_number] - warehouse_price, 2)
+                    price_diff=round(
+                        products.target_price
+                        [prod_number] - warehouse_price, 2)
                 )
-                logging.info(f'Sending email notification about [{product_name}] for: {warehouse_price}')
+                logging.info(
+                    f'Sending email notification about '
+                    f'[{product_name}] for: {warehouse_price}')
+            elif warehouse_price < products.target_price[prod_number] \
+                    and args.notify == "telegram":
+                notify_telegram(
+                    product_name=product_name,
+                    price=warehouse_price,
+                    link=products.link[prod_number],
+                    price_diff=round(
+                        products.target_price
+                        [prod_number] - warehouse_price, 2)
+                )
+                logging.info(
+                    f'Sending telegram notification about '
+                    f'[{product_name}] for: {warehouse_price}')
         except TypeError:
             pass
 
@@ -75,9 +113,9 @@ if __name__ == "__main__":
 
     previous_searches = f'{search_data_path}/searching_history.xlsx'
     previous_data = pandas.read_excel(previous_searches)
-    logging.info(f'Collecting previous data.')
+    logging.info('Collecting previous data.')
 
     complete_data = previous_data.append(recent_data, sort=False)
-    logging.info(f'Appending recent data, and merging with previous data.')
+    logging.info('Appending recent data, and merging with previous data.')
 
     complete_data.to_excel('search_data/searching_history.xlsx', index=False)
