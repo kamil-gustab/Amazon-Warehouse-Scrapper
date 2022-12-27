@@ -52,14 +52,12 @@ if __name__ == "__main__":
     for prod_number, link in enumerate(products.link):
         # Fetching urls
         page = requests.get(products.link[prod_number], headers=HEADERS)
-        # print(page.content)
 
         # Using BeautifulSoup for reading lxml
         soup = BeautifulSoup(page.content, features='lxml')
 
         try:
             product_name = soup.find(id="productTitle").get_text().strip()
-            print(product_name)
         except AttributeError:
             logging.debug(
                     f'Couldnt find product name for {link}')
@@ -73,7 +71,6 @@ if __name__ == "__main__":
             warehouse_price = round(float(soup.select(div)
                                           [0].get_text()[:6].
                                           replace(',', '.')) * 1.033616, 2)
-            print(warehouse_price)
         except IndexError:
             # If product doesn't have its price
             logging.debug(
