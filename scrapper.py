@@ -10,7 +10,7 @@ from datetime import datetime
 
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     filename='logs.log',
     format="%(levelname)s : %(asctime)s : %(message)s"
 )
@@ -23,13 +23,16 @@ HEADERS = ({'User-Agent':
 
 
 def notify_telegram(product_name, price, link, price_diff):
-    message = f'''
-        We found match for one of your items:\n
-        [{product_name}] for {price} euro\n
-        Link: {link}\n
-        It\'s {price_diff} euro cheaper than your target price!
-        '''
-    telegram_send.send(messages=[message])
+    try:
+        message = f'''
+            We found match for one of your items:\n
+            [{product_name}] for {price} euro\n
+            Link: {link}\n
+            It\'s {price_diff} euro cheaper than your target price!
+            '''
+        telegram_send.send(messages=[message])
+    except Exception as e:
+        logging.error(f'telegram_send wasnt configured propertly, error:\n{e}')
 
 
 if __name__ == "__main__":
@@ -49,13 +52,18 @@ if __name__ == "__main__":
     for prod_number, link in enumerate(products.link):
         # Fetching urls
         page = requests.get(products.link[prod_number], headers=HEADERS)
+        # print(page.content)
 
         # Using BeautifulSoup for reading lxml
         soup = BeautifulSoup(page.content, features='lxml')
 
         try:
             product_name = soup.find(id="productTitle").get_text().strip()
+            print(product_name)
         except AttributeError:
+            logging.debug(
+                    f'Couldnt find product name for {link}')
+            continue
             # If can't get Product title, then skips product
             continue
 
@@ -65,8 +73,11 @@ if __name__ == "__main__":
             warehouse_price = round(float(soup.select(div)
                                           [0].get_text()[:6].
                                           replace(',', '.')) * 1.033616, 2)
+            print(warehouse_price)
         except IndexError:
             # If product doesn't have its price
+            logging.debug(
+                    f'Couldnt find price for {product_name}')
             continue
 
         # Sending email notifications if price is lower than our Target price
