@@ -8,13 +8,6 @@ import os
 from bs4 import BeautifulSoup
 from datetime import datetime
 
-
-logging.basicConfig(
-    level=logging.DEBUG,
-    filename='logs.log',
-    format="%(levelname)s : %(asctime)s : %(message)s"
-)
-
 HEADERS = ({'User-Agent':
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
             'AppleWebKit/537.36 (KHTML, like Gecko) '
@@ -26,9 +19,9 @@ def notify_telegram(product_name, price, link, price_diff):
     try:
         message = f'''
             We found match for one of your items:\n
-            [{product_name}] for {price} euro\n
+            [{product_name}] for {price}\n
             Link: {link}\n
-            It\'s {price_diff} euro cheaper than your target price!
+            It\'s {price_diff} cheaper than your target price!
             '''
         telegram_send.send(messages=[message])
     except Exception as e:
@@ -39,7 +32,17 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--notify', type=str, required=True,
                         choices=['mail', 'no-notify', 'telegram'])
+    parser.add_argument('--debug', action='store_true')
     args = parser.parse_args()
+    log_lvl = logging.INFO
+    if args.debug:
+        log_lvl = logging.DEBUG
+
+    logging.basicConfig(
+        level=log_lvl,
+        filename='logs.log',
+        format="%(levelname)s : %(asctime)s : %(message)s"
+    )
 
     config_path = os.path.abspath("config")
     search_data_path = os.path.abspath("search_data")
@@ -61,50 +64,62 @@ if __name__ == "__main__":
         except AttributeError:
             logging.debug(
                     f'Couldnt find product name for {link}')
-            continue
             # If can't get Product title, then skips product
             continue
 
-        # Checking price for used items from Amazon Warehouse
+        # Checking if item is unavailable
         try:
-            div = '#olpLinkWidget_feature_div .a-color-base'
-            warehouse_price = round(float(soup.select(div)
-                                          [0].get_text()[:6].
-                                          replace(',', '.')) * 1.033616, 2)
-        except IndexError:
-            # If product doesn't have its price
-            logging.debug(
-                    f'Couldnt find price for {product_name}')
+            # import pdb; pdb.set_trace()
+            info = soup.select("#outOfStock .a-text-bold")[0].get_text()
+            logging.debug(f"[{link}] out of stock, skipping..")
             continue
+        # if available - checking warehouse price
+        except IndexError:
+            logging.debug(f"[{link}] in stock,"
+                           " checking warehouse price..")
+            try:
+                div = '#olpLinkWidget_feature_div .a-color-base'
+                price_str = soup.select(div)[0].get_text()[:6]
+            # if no warehouse - checking detail price
+            except IndexError:
+                logging.debug(f"Couldn't find WH price for [{link}],"
+                               " checking detail price..")
+                try:
+                    div = '.a-price-whole'
+                    price_str = soup.select(div)[0].get_text()[:6]
+                except IndexError:
+                    logging.debug(f"Couldn't find detail price for {link}, skipping..")
+                    continue
+            price = int(''.join(i for i in price_str if i.isdigit()))
 
         # Sending email notifications if price is lower than our Target price
         try:
-            if warehouse_price < products.target_price[prod_number] \
+            if price < products.target_price[prod_number] \
                     and args.notify == "mail":
                 email_notificator.send_mail(
                     product_name=product_name,
-                    price=warehouse_price,
+                    price=price,
                     link=products.link[prod_number],
                     price_diff=round(
                         products.target_price
-                        [prod_number] - warehouse_price, 2)
+                        [prod_number] - price, 2)
                 )
                 logging.info(
                     f'Sending email notification about '
-                    f'[{product_name}] for: {warehouse_price}')
-            elif warehouse_price < products.target_price[prod_number] \
+                    f'[{product_name}] for: {price}')
+            elif price < products.target_price[prod_number] \
                     and args.notify == "telegram":
                 notify_telegram(
                     product_name=product_name,
-                    price=warehouse_price,
+                    price=price,
                     link=products.link[prod_number],
                     price_diff=round(
                         products.target_price
-                        [prod_number] - warehouse_price, 2)
+                        [prod_number] - price, 2)
                 )
                 logging.info(
                     f'Sending telegram notification about '
-                    f'[{product_name}] for: {warehouse_price}')
+                    f'[{product_name}] for: {price}')
         except TypeError:
             pass
 
@@ -113,7 +128,7 @@ if __name__ == "__main__":
             'Link': link,
             'Product name': product_name,
             'Target price': products.target_price[prod_number],
-            'Actual price': warehouse_price
+            'Actual price': price
         }, index=[prod_number])
 
         recent_data = recent_data.append(data)
