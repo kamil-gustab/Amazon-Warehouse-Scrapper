@@ -28,6 +28,17 @@ def notify_telegram(product_name, price, link, price_diff):
         logging.error(f'telegram_send wasnt configured propertly, error:\n{e}')
 
 
+def format_price(price_str_):
+    dot_sep = price_str_.find(".")
+    coma_sep = price_str_.find(",")
+    if dot_sep > 0:
+        price_str_ = price_str_[:dot_sep]
+    elif coma_sep > 0:
+        price_str_ = price_str_[:coma_sep]
+    price = int(''.join(i for i in price_str_ if i.isdigit()))
+    return price
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--notify', type=str, required=True,
@@ -69,34 +80,42 @@ if __name__ == "__main__":
 
         # Checking if item is unavailable
         try:
-            # import pdb; pdb.set_trace()
             info = soup.select("#outOfStock .a-text-bold")[0].get_text()
             logging.debug(f"[{link}] out of stock, skipping..")
             continue
-        # if available - checking warehouse price
+        # If available - checking warehouse price
         except IndexError:
             logging.debug(f"[{link}] in stock,"
                            " checking warehouse price..")
             try:
-                div = '#olpLinkWidget_feature_div .a-color-base'
-                price_str = soup.select(div)[0].get_text()[:6]
-            # if no warehouse - checking detail price
+                # Might have problem with inting when price don't exist
+                div_a = '#olpLinkWidget_feature_div .a-color-base'
+                price_str_a = soup.select(div_a)[0].get_text()[:6]
+                div_b = '#usedAccordionRow .a-price-whole'
+                price_str_b = soup.select(div_b)[0].get_text()[:6]
+
+                if format_price(price_str_a) < format_price(price_str_b):
+                    price = format_price(price_str_a)
+                else:
+                    price = format_price(price_str_b)
+
+            # If no warehouse - checking detail price
             except IndexError:
-                logging.debug(f"Couldn't find WH price for [{link}],"
+                logging.debug(f"Couldn't find WH price,"
                                " checking detail price..")
                 try:
-                    div = '.a-price-whole'
+                    div = '#newAccordionRow_0 .a-price-whole'
                     price_str = soup.select(div)[0].get_text()[:6]
+                    price = format_price(price_str)
                 except IndexError:
-                    logging.debug(f"Couldn't find detail price for {link}, skipping..")
-                    continue
-            dot_sep = price_str.find(".")
-            coma_sep = price_str.find(",")
-            if dot_sep > 0:
-                price_str = price_str[:dot_sep]
-            elif coma_sep > 0:
-                price_str = price_str[:coma_sep]
-            price = int(''.join(i for i in price_str if i.isdigit()))
+                    logging.debug(f"Retrying with detail price..")
+                    try:
+                        div = '#corePrice_feature_div .a-price-whole'
+                        price_str = soup.select(div)[0].get_text()[:6]
+                        price = format_price(price_str)
+                    except IndexError:
+                        logging.debug(f"Couldn't find detail price for, skipping..")
+                        continue
 
         # Sending email notifications if price is lower than our Target price
         try:
