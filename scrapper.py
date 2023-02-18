@@ -90,6 +90,12 @@ if __name__ == "__main__":
                 except IndexError:
                     logging.debug(f"Couldn't find detail price for {link}, skipping..")
                     continue
+            dot_sep = price_str.find(".")
+            coma_sep = price_str.find(",")
+            if dot_sep > 0:
+                price_str = price_str[:dot_sep]
+            elif coma_sep > 0:
+                price_str = price_str[:coma_sep]
             price = int(''.join(i for i in price_str if i.isdigit()))
 
         # Sending email notifications if price is lower than our Target price
